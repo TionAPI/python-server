@@ -38,7 +38,7 @@ class tionAPIserver(BaseHTTPRequestHandler):
 
   def _create_device(self, device_name: str):
     if device_name in self.allowed_devices:
-      device = getattr(sys.modules[__name__], device_name)
+      device = getattr(sys.modules[__name__], device_name)()
     else:
       raise AttributeError
     return device
@@ -46,35 +46,70 @@ class tionAPIserver(BaseHTTPRequestHandler):
   def _send_bad_request(self, message: str):
     self._send_response(400, {"message": "request is {}".format(self.path)}, message)
 
-  def do_GET(self):
-    s = self.path.split("?")
+  def _get_device_from_request(self, path:str) -> str:
+
+    s = path.split("?")
     r = s[0].split("/")
     try:
-    
       device_name = r[1]
       device_mac = r[2]
-    except IndexError as e:      
+    except IndexError as e:
       self._send_bad_request("Use requests like '/model/mac_addres'")
       return
-    
+
     if len(s) > 1:
       p = s[1].split("&")
-    
+
     try:
       device = self._create_device(device_name)
     except AttributeError as e:
       self._send_response(422,{}, "Device {} is not supported".format(device_name))
       return
 
-    self.log_message(self.path)
+    self.log_message(path)
     self.log_message("Process device {0} with mac {1}".format(device_name, device_mac) )
-    self._send_response(200, device.get())
+
+    return device_mac, device
+
+  def _try_several_times(self, times: int, function, *args):
+    i = 0
+    done = False
+    exception = None
+    while i < times:
+      try:
+        result = function(*args)
+        done = True
+        break
+      except Exception as e:
+        exception = e
+    if not done:
+      raise exception
+
+    return result
+
+  def do_GET(self):
+    try:
+      device_mac, device = self._get_device_from_request(self.path)
+      response = self._try_several_times(3, device.get, device_mac)
+    except Exception as e:
+        self._send_response(400, {}, str(e))
+    else:
+      self._send_response(200, response)
 
   def do_POST(self):
-    '''Reads post request body'''
     content_len = int(self.headers.get('content-length', 0))
     post_body = self.rfile.read(content_len).decode()
-    self._send_response(200, {"message": "WIP: received post request: {}".format(post_body)})
+    device_mac, device = self._get_device_from_request(self.path)
+
+    i = 0
+    done = False
+    exception = None
+    try:
+      self._try_several_times(3, device.set, device_mac, json.loads(post_body))
+    except Exception as e:
+      self._send_response(400, {}, str(e))
+    else:
+      self._send_response(200, {"message": "Data {} were sent to device {}".format(post_body, device_mac)})
 
   def do_PUT(self):
     self.do_POST()
