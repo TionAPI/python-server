@@ -21,7 +21,7 @@ class tionAPIserver(BaseHTTPRequestHandler):
 
   def _set_headers(self, code):
     self.send_response(code)
-    self.send_header('Content-type', 'text/html')
+    self.send_header('Content-type', 'application/json')
     self.end_headers()
 
   def _send_response(self, code, message: dict, error = ""):
