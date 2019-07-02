@@ -95,6 +95,8 @@ class tionAPIserver(BaseHTTPRequestHandler):
         self._send_response(400, {}, str(e))
     else:
       self._send_response(200, response)
+    finally:
+      device._btle.disconnect()
 
   def do_POST(self):
     content_len = int(self.headers.get('content-length', 0))
@@ -110,6 +112,8 @@ class tionAPIserver(BaseHTTPRequestHandler):
       self._send_response(400, {}, str(e))
     else:
       self._send_response(200, {"message": "Data {} were sent to device {}".format(post_body, device_mac)})
+    finally:
+      device._btle.disconnect()
 
   def do_PUT(self):
     self.do_POST()
