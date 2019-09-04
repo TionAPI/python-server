@@ -76,6 +76,7 @@ class tionAPIserver(BaseHTTPRequestHandler):
     done = False
     exception = None
     while i < times:
+      i = i + 1
       try:
         result = function(*args)
         done = True
@@ -106,6 +107,7 @@ class tionAPIserver(BaseHTTPRequestHandler):
     i = 0
     done = False
     exception = None
+    self.log_message(post_body)
     try:
       self._try_several_times(3, device.set, device_mac, json.loads(post_body))
     except Exception as e:
