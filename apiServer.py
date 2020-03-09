@@ -114,7 +114,7 @@ class tionAPIserver(BaseHTTPRequestHandler):
 
   def do_GET(self):
     now = time.time();
-    if (self._is_cache_valid(now)):
+    if (not self._is_cache_valid(now)):
       try:
         device_mac, device = self._get_device_from_request(self.path)
         response = self._try_several_times(3, device.get, device_mac)
