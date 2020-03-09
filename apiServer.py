@@ -95,7 +95,7 @@ class tionAPIserver(BaseHTTPRequestHandler):
     except Exception as e:
         self._send_response(400, {}, str(e))
     else:
-      self._send_response(200, response)
+      self._send_response(response["code"], response)
     finally:
       device._btle.disconnect()
 
