@@ -3,11 +3,35 @@ from pprint import pprint
 import json
 import sys
 import os
+import time
 
 from tionDevices import *
 
 class tionAPIserver(BaseHTTPRequestHandler):
   allowed_devices = []
+  cache_valid = 600 # seconds
+  cache_expire = 0
+  cache_response = {}
+
+  @classmethod
+  def _is_cache_valid(cls, ts) -> bool:
+    return (not cls.cache_expire < ts)
+
+  @classmethod
+  def _invalidate_cache(cls):
+    cls.cache_expire = 0
+
+  @classmethod
+  def _get_cache(cls) -> dict:
+    return cls.cache_response
+
+  @classmethod
+  def _set_cache(cls, response, ts):
+    cls.cache_expire = ts + cls.cache_valid
+    cls.cache_response = dict(response)
+    cls.cache_response["code"] = 304
+    cls.cache_response["last_update"] = ts
+
   def __init__(self, request, client_addr, server):
     self.allowed_devices = self._get_allowed_devices()
     BaseHTTPRequestHandler.__init__(self, request, client_addr, server)
@@ -89,15 +113,22 @@ class tionAPIserver(BaseHTTPRequestHandler):
     return result
 
   def do_GET(self):
-    try:
-      device_mac, device = self._get_device_from_request(self.path)
-      response = self._try_several_times(3, device.get, device_mac)
-    except Exception as e:
+    now = time.time();
+    if (self._is_cache_valid(now)):
+      try:
+        device_mac, device = self._get_device_from_request(self.path)
+        response = self._try_several_times(3, device.get, device_mac)
+      except Exception as e:
+        self._invalidate_cache() #drop cache
         self._send_response(400, {}, str(e))
+      else:
+        self._set_cache(response, now)
+        self._send_response(response["code"], response)
+      finally:
+        device._btle.disconnect()
     else:
+      response = self._get_cache()
       self._send_response(response["code"], response)
-    finally:
-      device._btle.disconnect()
 
   def do_POST(self):
     content_len = int(self.headers.get('content-length', 0))
@@ -108,6 +139,7 @@ class tionAPIserver(BaseHTTPRequestHandler):
     done = False
     exception = None
     self.log_message(post_body)
+    self._invalidate_cache() #drop cache
     try:
       self._try_several_times(3, device.set, device_mac, json.loads(post_body))
     except Exception as e:
