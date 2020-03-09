@@ -122,7 +122,8 @@ class tionAPIserver(BaseHTTPRequestHandler):
         self._invalidate_cache() #drop cache
         self._send_response(400, {}, str(e))
       else:
-        self._set_cache(response, now)
+        if (response["code"] == 200):
+          self._set_cache(response, now)
         self._send_response(response["code"], response)
       finally:
         device._btle.disconnect()
