@@ -113,7 +113,7 @@ class tionAPIserver(BaseHTTPRequestHandler):
         now = time.time();
         if (not self._is_cache_valid(now)):
             try:
-                device_mac, device = self._get_device_from_request(self.path)
+                device = self._get_device_from_request(self.path)
                 response = self._try_several_times(3, device.get)
             except Exception as e:
                 self._invalidate_cache()  # drop cache
