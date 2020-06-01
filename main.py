@@ -13,23 +13,23 @@ server_address = (ADDRESS, PORT)
 
 handler = tionAPIserver
 
-class limitedHttpServer(HTTPServer):
-  def _signal_handler(self, signum, frame):
-    raise Exception("Timed out!")
 
-  def serve_forever(self):
-    """Handle one request at a time until doomsday."""
-    while 1:
-      signal.signal(signal.SIGALRM, self._signal_handler)
-      signal.alarm(4)
-      try:
-        self.handle_request()
-      except Exception as e:
-        print("Got exceptin {}".format(str(e)))
-      finally:
-        signal.alarm(0)
+class limitedHttpServer(HTTPServer):
+    def _signal_handler(self, signum, frame):
+        raise Exception("Timed out!")
+
+    def serve_forever(self):
+        """Handle one request at a time until doomsday."""
+        while 1:
+            signal.signal(signal.SIGALRM, self._signal_handler)
+            signal.alarm(4)
+            try:
+                self.handle_request()
+            except Exception as e:
+                print("Got exceptin {}".format(str(e)))
+            finally:
+                signal.alarm(0)
 
 
 httpd = HTTPServer(server_address, tionAPIserver)
 httpd.serve_forever()
-
