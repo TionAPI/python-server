@@ -5,7 +5,7 @@ import sys
 import os
 import time
 
-from tionDevices import *
+from tion import *
 
 
 class tionAPIserver(BaseHTTPRequestHandler):
