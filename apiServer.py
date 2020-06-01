@@ -105,8 +105,6 @@ class tionAPIserver(BaseHTTPRequestHandler):
                 if (response["code"] == 200):
                     self._set_cache(response, now)
                 self._send_response(response["code"], response)
-            finally:
-                device._btle.disconnect()
         else:
             response = self._get_cache()
             self._send_response(response["code"], response)
@@ -127,8 +125,6 @@ class tionAPIserver(BaseHTTPRequestHandler):
             self._send_response(400, {}, str(e))
         else:
             self._send_response(200, {"message": "Data {} were sent to device {}".format(post_body, device.mac)})
-        finally:
-            device._btle.disconnect()
 
     def do_PUT(self):
         self.do_POST()
