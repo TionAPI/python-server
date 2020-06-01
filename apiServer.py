@@ -57,9 +57,9 @@ class tionAPIserver(BaseHTTPRequestHandler):
         self.log_message("Response is: " + response)
         self.wfile.write((response + "\n").encode())
 
-    def _create_device(self, device_name: str):
+    def _create_device(self, device_name: str, device_mac: str) -> tion:
         if device_name in self.allowed_devices:
-            device = getattr(sys.modules[__name__], device_name)()
+            device = getattr(sys.modules[__name__], device_name)(device_mac)
         else:
             raise AttributeError
         return device
@@ -67,7 +67,7 @@ class tionAPIserver(BaseHTTPRequestHandler):
     def _send_bad_request(self, message: str):
         self._send_response(400, {"message": "request is {}".format(self.path)}, message)
 
-    def _get_device_from_request(self, path: str) -> str:
+    def _get_device_from_request(self, path: str) -> tion:
 
         s = path.split("?")
         r = s[0].split("/")
@@ -82,7 +82,7 @@ class tionAPIserver(BaseHTTPRequestHandler):
             p = s[1].split("&")
 
         try:
-            device = self._create_device(device_name)
+            device = self._create_device(device_name, device_mac)
         except AttributeError as e:
             self._send_response(422, {}, "Device {} is not supported".format(device_name))
             return
@@ -90,7 +90,7 @@ class tionAPIserver(BaseHTTPRequestHandler):
         self.log_message(path)
         self.log_message("Process device {0} with mac {1}".format(device_name, device_mac))
 
-        return device_mac, device
+        return device
 
     def _try_several_times(self, times: int, function, *args):
         i = 0
@@ -114,7 +114,7 @@ class tionAPIserver(BaseHTTPRequestHandler):
         if (not self._is_cache_valid(now)):
             try:
                 device_mac, device = self._get_device_from_request(self.path)
-                response = self._try_several_times(3, device.get, device_mac)
+                response = self._try_several_times(3, device.get)
             except Exception as e:
                 self._invalidate_cache()  # drop cache
                 self._send_response(400, {}, str(e))
@@ -131,7 +131,7 @@ class tionAPIserver(BaseHTTPRequestHandler):
     def do_POST(self):
         content_len = int(self.headers.get('content-length', 0))
         post_body = self.rfile.read(content_len).decode()
-        device_mac, device = self._get_device_from_request(self.path)
+        device = self._get_device_from_request(self.path)
 
         i = 0
         done = False
@@ -139,11 +139,11 @@ class tionAPIserver(BaseHTTPRequestHandler):
         self.log_message(post_body)
         self._invalidate_cache()  # drop cache
         try:
-            self._try_several_times(3, device.set, device_mac, json.loads(post_body))
+            self._try_several_times(3, device.set, json.loads(post_body))
         except Exception as e:
             self._send_response(400, {}, str(e))
         else:
-            self._send_response(200, {"message": "Data {} were sent to device {}".format(post_body, device_mac)})
+            self._send_response(200, {"message": "Data {} were sent to device {}".format(post_body, device.mac)})
         finally:
             device._btle.disconnect()
 
