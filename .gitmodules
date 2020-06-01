@@ -1,3 +1,4 @@
 [submodule "tionDevices"]
 	path = tionDevices
 	url = https://github.com/TionAPI/python.git
+	branch = dev
