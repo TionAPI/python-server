@@ -92,29 +92,12 @@ class tionAPIserver(BaseHTTPRequestHandler):
 
         return device
 
-    def _try_several_times(self, times: int, function, *args):
-        i = 0
-        done = False
-        exception = None
-        while i < times:
-            i = i + 1
-            try:
-                result = function(*args)
-                done = True
-                break
-            except Exception as e:
-                exception = e
-        if not done:
-            raise exception
-
-        return result
-
     def do_GET(self):
         now = time.time();
         if (not self._is_cache_valid(now)):
             try:
                 device = self._get_device_from_request(self.path)
-                response = self._try_several_times(3, device.get)
+                response = device.get()
             except Exception as e:
                 self._invalidate_cache()  # drop cache
                 self._send_response(400, {}, str(e))
@@ -139,7 +122,7 @@ class tionAPIserver(BaseHTTPRequestHandler):
         self.log_message(post_body)
         self._invalidate_cache()  # drop cache
         try:
-            self._try_several_times(3, device.set, json.loads(post_body))
+            device.set(json.loads(post_body))
         except Exception as e:
             self._send_response(400, {}, str(e))
         else:
