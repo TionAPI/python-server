@@ -5,7 +5,7 @@ import sys
 import os
 import time
 
-from tion import *
+from tion_btle import *
 
 
 class tionAPIserver(BaseHTTPRequestHandler):
@@ -39,7 +39,7 @@ class tionAPIserver(BaseHTTPRequestHandler):
 
     def _get_allowed_devices(self):
         result = []
-        for c in tion.__subclasses__():
+        for c in tion_btle.__subclasses__():
             result.append(c.__name__)
         return result
 
@@ -57,7 +57,7 @@ class tionAPIserver(BaseHTTPRequestHandler):
         self.log_message("Response is: " + response)
         self.wfile.write((response + "\n").encode())
 
-    def _create_device(self, device_name: str, device_mac: str) -> tion:
+    def _create_device(self, device_name: str, device_mac: str) -> tion_btle:
         if device_name in self.allowed_devices:
             device = getattr(sys.modules[__name__], device_name)(device_mac)
         else:
@@ -67,7 +67,7 @@ class tionAPIserver(BaseHTTPRequestHandler):
     def _send_bad_request(self, message: str):
         self._send_response(400, {"message": "request is {}".format(self.path)}, message)
 
-    def _get_device_from_request(self, path: str) -> tion:
+    def _get_device_from_request(self, path: str) -> tion_btle:
 
         s = path.split("?")
         r = s[0].split("/")
