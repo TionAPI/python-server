@@ -95,7 +95,7 @@ class TionApiServer(BaseHTTPRequestHandler):
         return device
 
     def do_GET(self):
-        now = time.time();
+        now = time.time()
         if not self._is_cache_valid(now):
             try:
                 device = self._get_device_from_request(self.path)
