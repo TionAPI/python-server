@@ -18,7 +18,7 @@ class tionAPIserver(BaseHTTPRequestHandler):
 
     @classmethod
     def _is_cache_valid(cls, ts) -> bool:
-        return (not cls.cache_expire < ts)
+        return not cls.cache_expire < ts
 
     @classmethod
     def _invalidate_cache(cls):
@@ -96,7 +96,7 @@ class tionAPIserver(BaseHTTPRequestHandler):
 
     def do_GET(self):
         now = time.time();
-        if (not self._is_cache_valid(now)):
+        if not self._is_cache_valid(now):
             try:
                 device = self._get_device_from_request(self.path)
                 response = device.get()
@@ -104,7 +104,7 @@ class tionAPIserver(BaseHTTPRequestHandler):
                 self._invalidate_cache()  # drop cache
                 self._send_response(400, {}, str(e))
             else:
-                if (response["code"] == 200):
+                if response["code"] == 200:
                     self._set_cache(response, now)
                 self._send_response(response["code"], response)
         else:
