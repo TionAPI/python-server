@@ -10,7 +10,7 @@ from tion_btle.s3 import S3
 from tion_btle.lite import Lite
 
 
-class tionAPIserver(BaseHTTPRequestHandler):
+class TionApiServer(BaseHTTPRequestHandler):
     allowed_devices = []
     cache_valid = 600  # seconds
     cache_expire = 0

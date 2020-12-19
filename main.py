@@ -4,14 +4,14 @@ import json
 import sys
 import signal
 
-from apiServer import tionAPIserver
+from apiServer import TionApiServer
 
 PORT = 8000
 ADDRESS = "127.0.0.1"
 
 server_address = (ADDRESS, PORT)
 
-handler = tionAPIserver
+handler = TionApiServer
 
 
 class limitedHttpServer(HTTPServer):
@@ -31,5 +31,5 @@ class limitedHttpServer(HTTPServer):
                 signal.alarm(0)
 
 
-httpd = HTTPServer(server_address, tionAPIserver)
+httpd = HTTPServer(server_address, TionApiServer)
 httpd.serve_forever()
